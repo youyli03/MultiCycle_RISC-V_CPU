@@ -1,0 +1,110 @@
+`include "InstrDef.vh"
+
+module Alu (
+    input  wire     clk,
+
+    input  wire         RItype      ,
+    input  wire [2:0]   funct       ,
+    input  wire         instr_30    ,
+    input  wire         Btype       ,
+    // input  wire         JSLtype     ,   // add req
+
+    input  wire [31:0]  in1         ,
+    input  wire [31:0]  in2         ,
+    output wire [31:0]  out         
+
+
+);
+
+//在ALU内实现对Btype的FUNCT的解码，因为Btype在跳转只需在写回处知道是否要跳转
+wire add_req = (funct == 3'b000)       ;    // add sub
+wire and_req = (funct == 3'b111)       ;    // and
+wire or_req  = (funct == 3'b110)       ;    // or
+wire xor_req = (funct == 3'b100)       ;    // xor
+wire slx_req = (funct[2:1] == 2'b01)   ;    // slt sltu
+wire sft_req = (funct[1:0] == 2'b01)   ;    // sll srl sra
+
+//加法器、减法器 同时扩展位宽复用减法器充当比较器
+//多个位宽防止溢出
+wire [32:0] adder_in1   ;
+wire [32:0] adder_in2   ;
+
+//使用funct[2] & funct[0]而不是funct == 3'b101 || funct == 3'b111进行解码
+wire Btype_ge = funct[2] & funct[0] ;
+// wire Btype_ge = (funct == 3'b101 || funct == 3'b111)    ;
+wire Btype_ne = funct[0]    ;
+
+//unsigned时扩展位为0
+// wire in_unsign_flag_sltu = RItype && (funct == 3'b011)   ;
+// wire in_unsign_flag_b = Btype && (funct[2:1] == 2'b11)      ;
+wire in_unsign_flag_sltu = RItype & slx_req & funct[0]  ;
+wire in_unsign_flag_b = Btype & funct[2] & funct[1]     ;
+wire in_unsign_flag = in_unsign_flag_sltu | in_unsign_flag_b    ;
+
+assign adder_in1[31:0] = in1    ;
+assign adder_in2[31:0] = in2    ;
+assign adder_in1[32] = in_unsign_flag ? 1'b0 : in1[31]  ;
+assign adder_in2[32] = in_unsign_flag ? 1'b0 : in2[31]  ;
+
+wire rglrAlu_sub_req = (add_req & instr_30) | slx_req ; //slt sltu  rs1 < rs2 -> 1
+wire Btype_sub_req = funct[2]   ;
+wire sub_req = ( RItype & rglrAlu_sub_req ) | (Btype & Btype_sub_req)   ; 
+
+//可以考虑使用异或或者同或门进行代替
+wire [32:0] _adder_in2 = sub_req? ~adder_in2 : adder_in2    ;    //减法时in2取反
+wire [32:0] addsub_res = adder_in1 + _adder_in2 + sub_req   ;
+
+wire sltx_flag = addsub_res[32] ;
+wire sltx_res = sltx_flag ? 32'b1 : 32'b0   ;
+
+wire and_res = in1 & in2    ;
+wire or_res  = in1 | in2    ;
+wire xor_res = in1 ^ in2    ;
+wire neq  = (|xor_res)      ; 
+
+wire shifter_Ari = instr_30 ;
+wire shifter_r = funct[2] ;
+wire [31:0] shifter_in1 = shifter_r ? 
+    {   in1[00],in1[01],in1[02],in1[03],
+        in1[04],in1[05],in1[06],in1[07],
+        in1[08],in1[09],in1[10],in1[11],
+        in1[12],in1[13],in1[14],in1[15],
+        in1[16],in1[17],in1[18],in1[19],
+        in1[20],in1[21],in1[22],in1[23],
+        in1[24],in1[25],in1[26],in1[27],
+        in1[28],in1[29],in1[30],in1[31] } : in1     ;
+wire [4:0]  shifter_in2 = in2[4:0]  ;
+wire [31:0] _sres = (shifter_in1 << shifter_in2)    ;
+wire [31:0] shifter_Ari_mask = 32'hffffffff >> shifter_in2  ;
+wire [31:0] shifter_res = shifter_r ? 
+    {   _sres[00],_sres[01],_sres[02],_sres[03],
+        _sres[04],_sres[05],_sres[06],_sres[07],
+        _sres[08],_sres[09],_sres[10],_sres[11],
+        _sres[12],_sres[13],_sres[14],_sres[15],
+        _sres[16],_sres[17],_sres[18],_sres[19],
+        _sres[20],_sres[21],_sres[22],_sres[23],
+        _sres[24],_sres[25],_sres[26],_sres[27],
+        _sres[28],_sres[29],_sres[30],_sres[31] } : _sres   ;
+wire [31:0] shifter_Ari_res = (shifter_res & shifter_Ari_mask) | ({32{in1[31]}} & (~shifter_Ari_mask));
+
+//可以考虑使用异或或者同或门进行代替
+wire Btype_sub_res = Btype_ge ? ~addsub_res[32] : addsub_res[32] ;
+wire Btype_euq_res = Btype_ne ? neq : ~neq  ;
+wire Btype_res = (Btype_sub_res | Btype_euq_res) ? 32'b1 : 32'b0   ;
+
+// wire neq  = (xor_res != 32'b0); 
+
+assign out = RItype ?
+            (
+                add_req ? addsub_res[31:0] :
+                sft_req ? (shifter_Ari ? shifter_Ari_res : shifter_res) :
+                slx_req ? sltx_res :
+                xor_req ? xor_res :
+                or_req  ? or_res :
+                and_res
+            ):
+            Btype ? Btype_res :
+            addsub_res[31:0]    ;
+
+
+endmodule
