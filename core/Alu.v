@@ -4,6 +4,8 @@ module Alu (
     input  wire     clk,
 
     input  wire         RItype      ,
+    input  wire         Rtype       ,
+    input  wire         PChandler   ,
     input  wire [2:0]   funct       ,
     input  wire         instr_30    ,
     input  wire         Btype       ,
@@ -30,9 +32,9 @@ wire [32:0] adder_in1   ;
 wire [32:0] adder_in2   ;
 
 //使用funct[2] & funct[0]而不是funct == 3'b101 || funct == 3'b111进行解码
-wire Btype_ge = funct[2] & funct[0] ;
-// wire Btype_ge = (funct == 3'b101 || funct == 3'b111)    ;
-wire Btype_ne = funct[0]    ;
+wire Btype_ne = ~(funct[2] | funct[1])     ;
+wire Btype_gelt = ~Btype_ne;
+wire Btype_res_reverse = funct[0];
 
 //unsigned时扩展位为0
 // wire in_unsign_flag_sltu = RItype && (funct == 3'b011)   ;
@@ -46,20 +48,20 @@ assign adder_in2[31:0] = in2    ;
 assign adder_in1[32] = in_unsign_flag ? 1'b0 : in1[31]  ;
 assign adder_in2[32] = in_unsign_flag ? 1'b0 : in2[31]  ;
 
-wire rglrAlu_sub_req = (add_req & instr_30) | slx_req ; //slt sltu  rs1 < rs2 -> 1
+wire rglrAlu_sub_req = (add_req & instr_30)  ; //slt sltu  rs1 < rs2 -> 1
 wire Btype_sub_req = funct[2]   ;
-wire sub_req = ( RItype & rglrAlu_sub_req ) | (Btype & Btype_sub_req)   ; 
+wire sub_req = PChandler ? 'b0 : ( Rtype & rglrAlu_sub_req ) | (Btype & Btype_sub_req) | slx_req  ; 
 
 //可以考虑使用异或或者同或门进行代替
-wire [32:0] _adder_in2 = sub_req? ~adder_in2 : adder_in2    ;    //减法时in2取反
+wire [32:0] _adder_in2 = (sub_req)? ~adder_in2 : adder_in2    ;    //减法时in2取反
 wire [32:0] addsub_res = adder_in1 + _adder_in2 + sub_req   ;
 
 wire sltx_flag = addsub_res[32] ;
 wire sltx_res = sltx_flag ? 32'b1 : 32'b0   ;
 
-wire and_res = in1 & in2    ;
-wire or_res  = in1 | in2    ;
-wire xor_res = in1 ^ in2    ;
+wire [31:0] and_res = in1 & in2    ;
+wire [31:0] or_res  = in1 | in2    ;
+wire [31:0] xor_res = in1 ^ in2    ;
 wire neq  = (|xor_res)      ; 
 
 wire shifter_Ari = instr_30 ;
@@ -88,23 +90,34 @@ wire [31:0] shifter_res = shifter_r ?
 wire [31:0] shifter_Ari_res = (shifter_res & shifter_Ari_mask) | ({32{in1[31]}} & (~shifter_Ari_mask));
 
 //可以考虑使用异或或者同或门进行代替
-wire Btype_sub_res = Btype_ge ? ~addsub_res[32] : addsub_res[32] ;
-wire Btype_euq_res = Btype_ne ? neq : ~neq  ;
-wire Btype_res = (Btype_sub_res | Btype_euq_res) ? 32'b1 : 32'b0   ;
+wire _Btype_res = (~neq & Btype_ne) | (addsub_res[32] & Btype_gelt);
+wire Btype_res = Btype_res_reverse ? ~_Btype_res : _Btype_res;
 
 // wire neq  = (xor_res != 32'b0); 
 
-assign out = RItype ?
-            (
-                add_req ? addsub_res[31:0] :
-                sft_req ? (shifter_Ari ? shifter_Ari_res : shifter_res) :
-                slx_req ? sltx_res :
-                xor_req ? xor_res :
-                or_req  ? or_res :
-                and_res
-            ):
-            Btype ? Btype_res :
-            addsub_res[31:0]    ;
+assign out = PChandler ? addsub_res[31:0] :
+             RItype ?
+             (
+                 add_req ? addsub_res[31:0] :
+                 sft_req ? (shifter_Ari ? shifter_Ari_res : shifter_res) :
+                 slx_req ? sltx_res :
+                 xor_req ? xor_res :
+                 or_req  ? or_res :
+                 and_res
+             ):
+             Btype ? Btype_res :
+             addsub_res[31:0]    ;
+
+// assign out = 32{RItype}& (
+//                 32{add_req} & addsub_res[31:0] |
+//                 32{sft_req} & (shifter_Ari ? shifter_Ari_res : shifter_res) |
+//                 32{slx_req} & sltx_res |
+//                 32{xor_req} & xor_res |
+//                 32{or_req } & or_res |
+//                 32{and_req} & and_res
+//             )|
+//             (32{Btype} & Btype_res) |
+//             (32{add_req} & addsub_res[31:0])    ;
 
 
 endmodule

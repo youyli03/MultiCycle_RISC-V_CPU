@@ -48,12 +48,12 @@ assign Utype_lui    = (opcode == `Utype_lui     );
 assign Utype_auipc  = (opcode == `Utype_auipc   );
 
 //条件分支不使用alu 直接pc+imm
-assign in1_sel = Utype_auipc    ;
+assign in1_sel = Utype_auipc | Jtype | Itype_jalr;
 // lui 不使用alu auipc in1 pc in2 imm32 jal pc imm32 jalr rs1 imm32
 // load mem->rd store rs2->mem
 //jal 和 btype都在mem获得pc地址
 // assign in2_sel = Utype_auipc | Stype | Itype_load | RItype | Itype_jalr;
-assign in2_sel = ~(Utype_lui | Jtype | Btype)   ;
+assign in2_sel = ~(Utype_lui | Jtype | Btype | Rtype)   ;
 
 assign RItype = Rtype | Itype_imm       ;
 assign reg_wr_req = ~(Btype | Stype)    ;
