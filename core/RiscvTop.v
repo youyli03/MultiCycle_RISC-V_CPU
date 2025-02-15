@@ -34,16 +34,21 @@ wire [31:0] imm32   ;
 wire [31:0] o_rd1   ;
 wire [31:0] o_rd2   ;
 
-wire        lui     ;
-wire        RItype  ;
-wire        Btype   ;
-wire        Jal     ;
-wire        Jalr    ;
-wire        Load    ;
-wire        Store   ;
+wire [2:0]  type    ;
 
-wire        in1_sel ;
-wire        in2_sel ;
+// wire        lui     ;
+// wire        RItype  ;
+// wire        Btype   ;
+// wire        Jal     ;
+// wire        Jalr    ;
+// wire        Load    ;
+// wire        Store   ;
+
+wire load_store = ~type[2] & type[1]    ;
+wire store      = type[0] & load_store  ;
+
+wire [1:0]  in1_sel ;
+wire [2:0]  in2_sel ;
 wire [31:0] alu_in1 ;
 wire [31:0] alu_in2 ;
 wire [31:0] alu_out ;
@@ -83,8 +88,9 @@ wire Btype_Jump_en = alu_out_save[0] ;
 
 wire        reg_wr_req  ;
 wire        reg_wr_en = (rv_state == STATE_WB) && reg_wr_req;
-wire [31:0] reg_wr_data = lui ? imm32 : 
-                        Load ? load_data :
+wire [1:0]  reg_wr_sel ;
+wire [31:0] reg_wr_data = reg_wr_sel[0] ? imm32 : 
+                        reg_wr_sel[1] ? load_data :
                         alu_out_save ;
 
 
@@ -141,12 +147,16 @@ end
 //     end
 // end
 
-// assign alu_in1 = (in1_sel || rv_state == STATE_WB) ? pc : o_rd1      ;
-assign alu_in1 = (rv_state == STATE_WB) ? (Jalr ? o_rd1 : pc) :
-                in1_sel ? pc: o_rd1      ;
-assign alu_in2 = (rv_state == STATE_WB) ? ((Btype & Btype_Jump_en) | Jal | Jalr ? imm32 : 3'd4) :
-                Jal | Jalr ? 3'd4 :
-                in2_sel ? imm32 : o_rd2   ;
+// assign alu_in1 = (rv_state == STATE_WB) ? (Jalr ? o_rd1 : pc) :
+//                 in1_sel ? pc: o_rd1      ;
+// assign alu_in2 = (rv_state == STATE_WB) ? ((Btype & Btype_Jump_en) | Jal | Jalr ? imm32 : 3'd4) :
+//                 Jal | Jalr ? 3'd4 :
+//                 in2_sel ? imm32 : o_rd2   ;
+assign alu_in1 = (rv_state == STATE_WB) ? (in1_sel[1] ? o_rd1 : pc) :
+                in1_sel[0] ? pc: o_rd1      ;
+assign alu_in2 = (rv_state == STATE_WB) ? ((in2_sel[2] & Btype_Jump_en) | in2_sel[1] ? imm32 : 3'd4) :
+                in2_sel[1] ? 3'd4 :
+                in2_sel[0] ? imm32 : o_rd2   ;
 
 // output  reg         mem_req     ,
 // output  reg         mem_write   ,
@@ -211,8 +221,10 @@ always @(*) begin
         end
         //放在WB而不是MEM是因为这个可以方便jal/jalr指令写回pc+4
         STATE_MEM: begin
-            mem_req <= Load | Store ;
-            mem_write   <= Store    ;
+            mem_req <= load_store   ;
+            mem_write   <= store    ;
+            // mem_req <= Load | Store ;
+            // mem_write   <= Store    ;
         end
     endcase
 end
@@ -228,40 +240,44 @@ always @(posedge clk) begin
     endcase
 end
 
-Alu Alu0(
+(* DONT_TOUCH = "true" *) Alu Alu0(
     .clk        (clk        ),
 
-    .RItype     (RItype     ),
-    .Rtype      (RItype & ~in2_sel ),
+    // .RItype     (RItype     ),
+    // .Rtype      (RItype & ~in2_sel ),
     .PChandler  ((rv_state == STATE_WB)),
     .funct      (func3      ),
     .instr_30   (instr[30]  ),
-    .Btype      (Btype      ),
+    // .Btype      (Btype      ),
     // input  wire         JSLtype     ,   // add req
+
+    .type       (type       ),
 
     .in1        (alu_in1    ),
     .in2        (alu_in2    ),
     .out        (alu_out    )
 );
 
-InstrDecU IDU(
+(* DONT_TOUCH = "true" *) InstrDecU IDU(
     .instr      (instr      ),
     .imm32      (imm32      ),
     .in1_sel    (in1_sel    ),       // 0 reg, 1 pc  , pc在mem阶段再更�?,这样不用pc-4
     .in2_sel    (in2_sel    ),       // 0 reg, 1 imm32
 
-    .lui        (lui        ),
-    .RItype     (RItype     ), // add sub sll slt sltu xor srl sra or and
-    .Btype      (Btype      ),
-    .Jal        (Jal        ),
-    .Jalr       (Jalr       ),
-    .Load       (Load       ),
-    .Store      (Store      ),
+    .type       (type       ),
+    // .lui        (lui        ),
+    // .RItype     (RItype     ), // add sub sll slt sltu xor srl sra or and
+    // .Btype      (Btype      ),
+    // .Jal        (Jal        ),
+    // .Jalr       (Jalr       ),
+    // .Load       (Load       ),
+    // .Store      (Store      ),
 
+    .reg_wr_sel (reg_wr_sel ),
     .reg_wr_req (reg_wr_req )
 );
 
-RegFile RegFile0(
+(* DONT_TOUCH = "true" *) RegFile RegFile0(
     .clk    (clk        ),
     .rs1    (rs1        ),
     .rs2    (rs2        ),

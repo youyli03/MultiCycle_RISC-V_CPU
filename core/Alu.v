@@ -3,12 +3,14 @@
 module Alu (
     input  wire     clk,
 
-    input  wire         RItype      ,
-    input  wire         Rtype       ,
+    // input  wire         RItype      ,
+    // input  wire         Rtype       ,
     input  wire         PChandler   ,
     input  wire [2:0]   funct       ,
     input  wire         instr_30    ,
-    input  wire         Btype       ,
+    // input  wire         Btype       ,
+
+    input  wire [2:0]   type       ,
     // input  wire         JSLtype     ,   // add req
 
     input  wire [31:0]  in1         ,
@@ -17,6 +19,11 @@ module Alu (
 
 
 );
+
+wire RItype = type[2] & ~type[1];
+wire Rtype  = RItype & type[0]  ;
+wire Btype  = type == `BTYPE    ;
+// wire otherType = ~(RItype | Btype ) ;
 
 //在ALU内实现对Btype的FUNCT的解码，因为Btype在跳转只需在写回处知道是否要跳转
 wire add_req = (funct == 3'b000)       ;    // add sub
@@ -94,6 +101,19 @@ wire _Btype_res = (~neq & Btype_ne) | (addsub_res[32] & Btype_gelt);
 wire Btype_res = Btype_res_reverse ? ~_Btype_res : _Btype_res;
 
 // wire neq  = (xor_res != 32'b0); 
+
+// wire [31:0] __shifter_res = ( {32{shifter_Ari}} & shifter_Ari_res ) |
+//                         ( {32{~shifter_Ari}} & shifter_res ) ;
+// wire [31:0] RItype_res = ({32{add_req}} & addsub_res[31:0]) |
+//                         ({32{sft_req}} & __shifter_res) |
+//                         ({32{slx_req}} & sltx_res) |
+//                         ({32{xor_req}} & xor_res ) |
+//                         ({32{or_req} } & or_res  ) |
+//                         ({32{and_req}} & and_res ) ;
+
+// assign out = ({32{otherType}} & addsub_res[31:0]) |
+//             ({32{RItype}} & RItype_res ) |
+//             ({32{Btype}} & Btype_res) ;
 
 assign out = PChandler ? addsub_res[31:0] :
              RItype ?

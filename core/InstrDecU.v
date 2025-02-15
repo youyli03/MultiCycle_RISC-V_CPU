@@ -5,16 +5,20 @@ module InstrDecU (
 
     output wire [31:0]  imm32   ,
 
-    output wire         in1_sel ,       // 0 reg, 1 pc  , pc在mem阶段再更新,这样不用pc+4
-    output wire         in2_sel ,       // 0 reg, 1 imm32
+    output wire [1:0]   in1_sel ,       
+    output wire [2:0]   in2_sel ,       
 
-    output wire         lui     ,
-    output wire         RItype  , // add sub sll slt sltu xor srl sra or and
-    output wire         Btype   ,
-    output wire         Jal     ,
-    output wire         Jalr    ,
-    output wire         Load    ,
-    output wire         Store   ,
+    output reg  [2:0]   type    ,
+
+    output reg  [1:0]   reg_wr_sel ,
+
+    // output wire         lui     ,
+    // output wire         RItype  , // add sub sll slt sltu xor srl sra or and
+    // output wire         Btype   ,
+    // output wire         Jal     ,
+    // output wire         Jalr    ,
+    // output wire         Load    ,
+    // output wire         Store   ,
 
     output wire         reg_wr_req  
 
@@ -37,6 +41,23 @@ wire Jtype  ;
 wire Utype_lui      ;
 wire Utype_auipc    ;
 
+always@(*)begin
+    type = `TYPE_NONE ;
+    if(Btype        ) type = `BTYPE ;
+    if(Itype_load   ) type = `LOAD  ;
+    if(Stype        ) type = `STORE ;
+    if(Itype_imm    ) type = `ITYPE ;
+    if(Rtype        ) type = `RTYPE ;
+    if(Jtype        ) type = `JAL   ;
+    if(Itype_jalr   ) type = `JALR  ;
+end
+
+always@(*)begin
+    reg_wr_sel = 2'd0;
+    if(Utype_lui) reg_wr_sel = 2'd1;
+    if(Itype_load) reg_wr_sel = 2'd2;
+end
+
 assign Rtype = (opcode == `Rtype        );
 assign Itype_imm    = (opcode == `Itype_imm     );
 assign Itype_load   = (opcode == `Itype_load    );
@@ -48,12 +69,15 @@ assign Utype_lui    = (opcode == `Utype_lui     );
 assign Utype_auipc  = (opcode == `Utype_auipc   );
 
 //条件分支不使用alu 直接pc+imm
-assign in1_sel = Utype_auipc | Jtype | Itype_jalr;
+assign in1_sel[0] = Utype_auipc | Jtype | Itype_jalr;
+assign in1_sel[1] = Itype_jalr;
 // lui 不使用alu auipc in1 pc in2 imm32 jal pc imm32 jalr rs1 imm32
 // load mem->rd store rs2->mem
 //jal 和 btype都在mem获得pc地址
 // assign in2_sel = Utype_auipc | Stype | Itype_load | RItype | Itype_jalr;
-assign in2_sel = ~(Utype_lui | Jtype | Btype | Rtype)   ;
+assign in2_sel[0] = ~(Utype_lui | Jtype | Btype | Rtype)   ;
+assign in2_sel[1] = Itype_jalr | Jtype ;
+assign in2_sel[2] = Btype   ;
 
 assign RItype = Rtype | Itype_imm       ;
 assign reg_wr_req = ~(Btype | Stype)    ;

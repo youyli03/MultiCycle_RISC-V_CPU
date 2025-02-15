@@ -10,6 +10,15 @@
 `define Utype_lui   7'b0110111   //LUI
 `define Utype_auipc 7'b0010111   //AUIPC
 
+//type
+`define TYPE_NONE   3'b000
+`define BTYPE       3'b001
+`define LOAD        3'b010
+`define STORE       3'b011
+`define ITYPE       3'b100
+`define RTYPE       3'b101
+`define JAL         3'b110
+`define JALR        3'b111 
 
 //funct3
 `define FUNCT_ADDSUB       3'b000
