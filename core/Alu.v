@@ -22,7 +22,7 @@ module Alu (
 
 wire RItype = type[2] & ~type[1];
 wire Rtype  = RItype & type[0]  ;
-wire Btype  = type == `BTYPE    ;
+wire Btype  = type == `TYPE_BTYPE    ;
 // wire otherType = ~(RItype | Btype ) ;
 
 //在ALU内实现对Btype的FUNCT的解码，因为Btype在跳转只需在写回处知道是否要跳转
@@ -57,7 +57,7 @@ assign adder_in2[32] = in_unsign_flag ? 1'b0 : in2[31]  ;
 
 wire rglrAlu_sub_req = (add_req & instr_30)  ; //slt sltu  rs1 < rs2 -> 1
 wire Btype_sub_req = funct[2]   ;
-wire sub_req = PChandler ? 'b0 : ( Rtype & rglrAlu_sub_req ) | (Btype & Btype_sub_req) | slx_req  ; 
+wire sub_req = PChandler ? 'b0 : ( Rtype & rglrAlu_sub_req ) | (Btype & Btype_sub_req) | (slx_req & RItype)  ; 
 
 //可以考虑使用异或或者同或门进行代替
 wire [32:0] _adder_in2 = (sub_req)? ~adder_in2 : adder_in2    ;    //减法时in2取反

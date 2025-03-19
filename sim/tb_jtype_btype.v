@@ -31,15 +31,15 @@ initial begin
     data[2]  = 32'h00940463;   // beq x8, x9, 30
     data[3]  = 32'h00150513;   // addi x10, x10, 1
 
-    data[4]  = 32'h10000637;   //lui x12, 65536
-    // data[4]  = 32'h00941463;   // bne x8, x9, 8
+    // data[4]  = 32'h10000637;   //lui x12, 65536
+    data[4]  = 32'h00941463;   // bne x8, x9, 8
     data[5]  = 32'h00150513;   // addi x10, x10, 1
     data[6]  = 32'h00944463;   // blt x8, x9, 8           # If x8 < x9, skip the increment
-    data[7]  = 32'h00200697;   // auipc x13, 512
-    // data[7]  = 32'h00150513;   // addi x10, x10, 1
+    // data[7]  = 32'h00200697;   // auipc x13, 512
+    data[7]  = 32'h00150513;   // addi x10, x10, 1
     data[8]  = 32'h00945463;   // bge x8, x9, 8           # If x8 >= x9, skip the increment
-    data[9]  = 32'h00200697;   // auipc x13, 512
-    // data[9]  = 32'h00150513;   // addi x10, x10, 1
+    // data[9]  = 32'h00200697;   // auipc x13, 512
+    data[9]  = 32'h00150513;   // addi x10, x10, 1
     data[10] = 32'h00946463;   // bltu x8, x9, 8          # If x8 < x9 (unsigned), skip the increment
     data[11] = 32'h00150513;   // addi x10, x10, 1
     data[12] = 32'h00947463;   // bgeu x8, x9, 8          # If x8 >= x9 (unsigned), skip the increment

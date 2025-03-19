@@ -42,14 +42,14 @@ wire Utype_lui      ;
 wire Utype_auipc    ;
 
 always@(*)begin
-    type = `TYPE_NONE ;
-    if(Btype        ) type = `BTYPE ;
-    if(Itype_load   ) type = `LOAD  ;
-    if(Stype        ) type = `STORE ;
-    if(Itype_imm    ) type = `ITYPE ;
-    if(Rtype        ) type = `RTYPE ;
-    if(Jtype        ) type = `JAL   ;
-    if(Itype_jalr   ) type = `JALR  ;
+    type = `TYPE_TYPE_NONE ;
+    if(Btype        ) type = `TYPE_BTYPE ;
+    if(Itype_load   ) type = `TYPE_LOAD  ;
+    if(Stype        ) type = `TYPE_STORE ;
+    if(Itype_imm    ) type = `TYPE_ITYPE ;
+    if(Rtype        ) type = `TYPE_RTYPE ;
+    if(Jtype        ) type = `TYPE_JAL   ;
+    if(Itype_jalr   ) type = `TYPE_JALR  ;
 end
 
 always@(*)begin

@@ -82,8 +82,8 @@ initial begin
     data[12] = 32'h00114683;   // lb x13, 1(x2)    (x13 = 0x56，符号扩展)
 
     // 测试 sb (存储字节)
-    data[13] = 32'h00c16c23;   // sb x12, 24(x2)   (data[26] = 0x78)
-    data[14] = 32'h00d16e23;   // sb x13, 28(x2)   (data[27] = 0x56)
+    data[13] = 32'h00c10c23;   // sb x12, 24(x2)   (data[26] = 0x78)
+    data[14] = 32'h00d10e23;   // sb x13, 28(x2)   (data[27] = 0x56)
 
     // 结束
     data[15] = 32'h00000013;   // addi x0, x0, 0  (NOP)

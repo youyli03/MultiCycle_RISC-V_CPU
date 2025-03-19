@@ -11,14 +11,14 @@
 `define Utype_auipc 7'b0010111   //AUIPC
 
 //type
-`define TYPE_NONE   3'b000
-`define BTYPE       3'b001
-`define LOAD        3'b010
-`define STORE       3'b011
-`define ITYPE       3'b100
-`define RTYPE       3'b101
-`define JAL         3'b110
-`define JALR        3'b111 
+`define TYPE_TYPE_NONE   3'b000
+`define TYPE_BTYPE       3'b001
+`define TYPE_LOAD        3'b010
+`define TYPE_STORE       3'b011
+`define TYPE_ITYPE       3'b100
+`define TYPE_RTYPE       3'b101
+`define TYPE_JAL         3'b110
+`define TYPE_JALR        3'b111 
 
 //funct3
 `define FUNCT_ADDSUB       3'b000
