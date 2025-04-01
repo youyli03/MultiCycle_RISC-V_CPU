@@ -2,6 +2,9 @@ module SOC_TOP(
     input         clk       ,
     input         rst_n     ,
 
+    output wire         uart_tx ,
+    input  wire         uart_rx ,
+
     input  wire [31:0]  gpio_in     ,
     output wire [31:0]  gpio_out    ,
     output wire [31:0]  gpio_dir     // 0=input, 1=output
@@ -136,6 +139,24 @@ bus2gpio gpio0(
     .gpio_in 		(gpio_in 	),
     .gpio_out		(gpio_out	),
     .gpio_dir		(gpio_dir	) // 0=input, 1=output
+);
+
+bus2uart uart0(
+    .clk       (clk		),
+    .rst_n     (rst_n	),
+    
+    // Memory 接口
+    .slave_req   	(slave_2_req    ),
+    .slave_write 	(slave_2_write  ),
+    .slave_valid 	(slave_2_valid  ),
+    .slave_ready 	(slave_2_ready  ),
+    .slave_addr  	(slave_2_addr   ),
+    .slave_wdata 	(slave_2_wdata  ),
+    .slave_rdata 	(slave_2_rdata  ),
+
+    .uart_rx		(uart_rx    ),
+    .uart_tx		(uart_tx    )
+
 );
 
 

@@ -11,9 +11,13 @@ initial begin
     rst <= 1 ;
 end
 
+wire            uart_loop   ;
+
 SOC_TOP SOC_TOP0(
     .clk        (clk        ),
     .rst_n      (rst        ),
+    .uart_tx    (uart_loop  ),
+    .uart_rx    (uart_loop  ),
     .gpio_in    (32'h0f00   )
 );
 
