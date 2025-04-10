@@ -159,5 +159,20 @@ bus2uart uart0(
 
 );
 
+bus2tim tim0(
+    .clk       (clk		),
+    .rst_n     (rst_n	),
+    
+    // Memory 接口
+    .slave_req  	(slave_3_req    ),
+    .slave_write	(slave_3_write  ),
+    .slave_valid	(slave_3_valid  ),
+    .slave_ready	(slave_3_ready  ),
+    .slave_addr 	(slave_3_addr   ),
+    .slave_wdata	(slave_3_wdata  ),
+    .slave_rdata	(slave_3_rdata  )
+
+);
+
 
 endmodule
