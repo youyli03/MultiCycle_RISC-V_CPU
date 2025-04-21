@@ -10,6 +10,8 @@ module Alu (
     input  wire         instr_30    ,
     // input  wire         Btype       ,
 
+    input  wire         exe_status  ,
+    output wire         alu_down    ,
     input  wire [2:0]   type       ,
     // input  wire         JSLtype     ,   // add req
 
@@ -83,8 +85,40 @@ wire [31:0] shifter_in1 = shifter_r ?
         in1[24],in1[25],in1[26],in1[27],
         in1[28],in1[29],in1[30],in1[31] } : in1     ;
 wire [4:0]  shifter_in2 = in2[4:0]  ;
-wire [31:0] _sres = (shifter_in1 << shifter_in2)    ;
-wire [31:0] shifter_Ari_mask = 32'hffffffff >> shifter_in2  ;
+
+reg  shifter_down   ;
+reg  _exe_status    ;
+reg  [4:0]  shifter_cnt ;
+reg  [31:0] _sres_reg   ;
+reg  [31:0] shifter_Ari_mask_reg    ;
+always@(posedge clk)begin
+    shifter_down <= 1'b0    ;
+    _exe_status <= exe_status   ;
+    if(exe_status & ~_exe_status) begin
+        shifter_cnt <= 5'b0 ;
+        _sres_reg <= shifter_in1 ;
+        shifter_Ari_mask_reg <= 32'hffffffff ;
+    end
+    else begin
+        if(!shifter_down) begin
+            shifter_Ari_mask_reg <= shifter_Ari_mask_reg >> 1  ;
+            _sres_reg <= _sres_reg << 1 ;
+            shifter_cnt <= shifter_cnt + 5'b1   ;
+        end
+
+        if(shifter_cnt + 5'b1 >= shifter_in2)
+            shifter_down <= 1'b1    ;
+        else
+            shifter_cnt <= shifter_cnt + 5'b1   ;
+    end
+end
+
+assign alu_down = sft_req ? shifter_down : 1'b1;
+
+// wire [31:0] _sres = (shifter_in1 << shifter_in2)    ;
+// wire [31:0] shifter_Ari_mask = 32'hffffffff >> shifter_in2  ;
+wire [31:0] _sres = _sres_reg   ;
+wire [31:0] shifter_Ari_mask = shifter_Ari_mask_reg ;
 wire [31:0] shifter_res = shifter_r ? 
     {   _sres[00],_sres[01],_sres[02],_sres[03],
         _sres[04],_sres[05],_sres[06],_sres[07],

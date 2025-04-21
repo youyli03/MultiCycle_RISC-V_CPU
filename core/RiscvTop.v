@@ -52,6 +52,7 @@ wire [2:0]  in2_sel ;
 wire [31:0] alu_in1 ;
 wire [31:0] alu_in2 ;
 wire [31:0] alu_out ;
+wire        alu_down;
 
 // wire [6:0]  opcode  ;
 wire [4:0]  rd      ;
@@ -126,6 +127,7 @@ always @(*) begin
             end
         end
         STATE_EX:begin //执行 等待ALU结束信号
+            if(alu_down)
             rv_state_nxt <= STATE_MEM   ;
         end
         STATE_MEM:begin //load、store和分支指令�??
@@ -252,6 +254,9 @@ end
     // input  wire         JSLtype     ,   // add req
 
     .type       (type       ),
+
+    .exe_status (rv_state == STATE_EX),
+    .alu_down   (alu_down),
 
     .in1        (alu_in1    ),
     .in2        (alu_in2    ),
