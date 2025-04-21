@@ -87,6 +87,7 @@ wire [31:0] shifter_in1 = shifter_r ?
 wire [4:0]  shifter_in2 = in2[4:0]  ;
 
 reg  shifter_down   ;
+reg  _shifter_down  ;
 reg  _exe_status    ;
 reg  [4:0]  shifter_cnt ;
 reg  [31:0] _sres_reg   ;
@@ -98,15 +99,21 @@ always@(posedge clk)begin
         shifter_cnt <= 5'b0 ;
         _sres_reg <= shifter_in1 ;
         shifter_Ari_mask_reg <= 32'hffffffff ;
+        if(sft_req)
+            _shifter_down <= 1'b1   ;
+        else
+            _shifter_down <= 1'b0   ;
     end
     else begin
         if(!shifter_down) begin
             shifter_Ari_mask_reg <= shifter_Ari_mask_reg >> 1  ;
             _sres_reg <= _sres_reg << 1 ;
-            shifter_cnt <= shifter_cnt + 5'b1   ;
         end
 
-        if(shifter_cnt + 5'b1 >= shifter_in2)
+        if(shifter_down)
+            _shifter_down <= 1'b0   ;
+
+        if(shifter_cnt + 5'b1 >= shifter_in2 && _shifter_down)
             shifter_down <= 1'b1    ;
         else
             shifter_cnt <= shifter_cnt + 5'b1   ;
