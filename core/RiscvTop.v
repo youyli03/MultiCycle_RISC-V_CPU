@@ -21,6 +21,7 @@ localparam STATE_ID     = 3'd2  ;   //译码
 localparam STATE_EX     = 3'd3  ;   //执行
 localparam STATE_MEM    = 3'd4  ;   //存储
 localparam STATE_WB     = 3'd5  ;   //写回
+localparam STATE_REG2   = 3'd6  ;   //rs2
 
 reg  [2:0]  rv_state        ;
 reg  [2:0]  rv_state_nxt    ;
@@ -58,7 +59,7 @@ wire        alu_down;
 wire [4:0]  rd      ;
 wire [2:0]  func3   ;
 wire [4:0]  rs1     ;
-wire [4:0]  rs2     ;
+// wire [4:0]  rs2     ;
 // wire [6:0]  func7   ;
 
 wire [1:0]  ls_size = func3[1:0] ;
@@ -77,6 +78,10 @@ always@(*) begin
         alu_out_save <= alu_out ;
 end
 
+wire        rs2_rd_req  ;
+reg  [31:0] rs1_data ;
+reg  [31:0] rs2_data ;
+
 reg  [31:0] _store_data ;
 reg  [3:0]  _store_mask ;
 assign mem_wdata = _store_data ;
@@ -88,7 +93,7 @@ wire Btype_Jump_en = alu_out_save[0] ;
 // wire [31:0] pc_add_4        = pc + 3'd4 ;
 
 wire        reg_wr_req  ;
-wire        reg_wr_en = (rv_state == STATE_WB) && reg_wr_req;
+wire        reg_wr_en = (rv_state == STATE_WB) && reg_wr_req && (rd != 0);
 wire [1:0]  reg_wr_sel ;
 wire [31:0] reg_wr_data = reg_wr_sel[0] ? imm32 : 
                         reg_wr_sel[1] ? load_data :
@@ -98,8 +103,8 @@ wire [31:0] reg_wr_data = reg_wr_sel[0] ? imm32 :
 // assign opcode   = instr[6:0]    ;
 assign rd       = instr[11:7]   ;
 assign func3    = instr[14:12]  ;
-assign rs1      = instr[19:15]  ;
-assign rs2      = instr[24:20]  ;
+assign rs1      = ((rv_state == STATE_EX || rv_state == STATE_REG2) && rs2_rd_req)? instr[24:20] : instr[19:15] ;
+// assign rs2      = instr[24:20]  ;
 // assign func7    = instr[31:25]  ;
 
 always @(posedge clk or negedge rst_n) begin
@@ -124,7 +129,12 @@ always @(*) begin
             if(mem_valid) begin
                 rv_state_nxt <= STATE_EX    ;
                 instr <= mem_rdata   ;
+                if(rs2_rd_req)
+                    rv_state_nxt <= STATE_REG2    ;
             end
+        end
+        STATE_REG2:begin
+            rv_state_nxt <= STATE_EX    ;
         end
         STATE_EX:begin //执行 等待ALU结束信号
             if(alu_down)
@@ -138,6 +148,24 @@ always @(*) begin
         end
         endcase
     end
+end
+
+always@(*) begin
+    case(rv_state)
+    STATE_EX:begin
+        if(rs2_rd_req)
+            rs2_data <= o_rd1 ;
+        else
+            rs1_data <= o_rd1 ;
+    end
+    // STATE_ID:begin
+    //     rs1_data <= o_rd1 ;
+    // end
+    STATE_REG2:begin
+        rs1_data <= o_rd1 ;
+        // rs2_data <= o_rd1 ;
+    end
+    endcase
 end
 
 // always @(*) begin
@@ -154,11 +182,11 @@ end
 // assign alu_in2 = (rv_state == STATE_WB) ? ((Btype & Btype_Jump_en) | Jal | Jalr ? imm32 : 3'd4) :
 //                 Jal | Jalr ? 3'd4 :
 //                 in2_sel ? imm32 : o_rd2   ;
-assign alu_in1 = (rv_state == STATE_WB) ? (in1_sel[1] ? o_rd1 : pc) :
-                in1_sel[0] ? pc: o_rd1      ;
+assign alu_in1 = (rv_state == STATE_WB) ? (in1_sel[1] ? rs1_data : pc) :
+                in1_sel[0] ? pc: rs1_data      ;
 assign alu_in2 = (rv_state == STATE_WB) ? ((in2_sel[2] & Btype_Jump_en) | in2_sel[1] ? imm32 : 3'd4) :
                 in2_sel[1] ? 3'd4 :
-                in2_sel[0] ? imm32 : o_rd2   ;
+                in2_sel[0] ? imm32 : rs2_data   ;
 
 // output  reg         mem_req     ,
 // output  reg         mem_write   ,
@@ -188,11 +216,11 @@ end
 assign mem_mask = _store_mask << mem_addr[1:0] ;
 
 always@(*) begin
-    _store_data <= o_rd2 ;
+    _store_data <= rs2_data ;
     case(mem_addr[1:0])
-    2'b01: _store_data[15:8]  <= o_rd2[7:0]  ;
-    2'b10: _store_data[31:16] <= o_rd2[15:0] ;
-    2'b11: _store_data[31:24] <= o_rd2[7:0]  ;
+    2'b01: _store_data[15:8]  <= rs2_data[7:0]  ;
+    2'b10: _store_data[31:16] <= rs2_data[15:0] ;
+    2'b11: _store_data[31:24] <= rs2_data[7:0]  ;
     endcase
 end
 
@@ -270,6 +298,7 @@ end
     .in2_sel    (in2_sel    ),       // 0 reg, 1 imm32
 
     .type       (type       ),
+    .rs2_rd_req (rs2_rd_req ),
     // .lui        (lui        ),
     // .RItype     (RItype     ), // add sub sll slt sltu xor srl sra or and
     // .Btype      (Btype      ),
@@ -285,12 +314,12 @@ end
 (* DONT_TOUCH = "true" *) RegFile RegFile0(
     .clk    (clk        ),
     .rs1    (rs1        ),
-    .rs2    (rs2        ),
+    // .rs2    (rs2        ),
     .rd     (rd         ),
     .wr_en  (reg_wr_en  ),
 
     .rd1    (o_rd1      ),
-    .rd2    (o_rd2      ),
+    // .rd2    (o_rd2      ),
     .i_data (reg_wr_data)
 );
 

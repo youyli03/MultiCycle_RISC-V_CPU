@@ -19,4 +19,13 @@ sw x17, 0(x15)
 loop:
 lw x18, 0x8(x15)
 lw x19, 0xc(x15)
+lw x20, 0x0(x10)
+addi x21, x0, 0x4
+and x22, x20, x21
+beq x22, x0, update
+j loop
+
+update:
+lw x23, 0x4(x10)
+sw x23, 8(x1)
 j loop

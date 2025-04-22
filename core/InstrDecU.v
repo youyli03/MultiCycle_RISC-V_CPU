@@ -20,6 +20,8 @@ module InstrDecU (
     // output wire         Load    ,
     // output wire         Store   ,
 
+    output wire         rs2_rd_req  ,
+
     output wire         reg_wr_req  
 
 );
@@ -57,6 +59,8 @@ always@(*)begin
     if(Utype_lui) reg_wr_sel = 2'd1;
     if(Itype_load) reg_wr_sel = 2'd2;
 end
+
+assign rs2_rd_req = Btype | Stype | Rtype   ;
 
 assign Rtype = (opcode == `Rtype        );
 assign Itype_imm    = (opcode == `Itype_imm     );
