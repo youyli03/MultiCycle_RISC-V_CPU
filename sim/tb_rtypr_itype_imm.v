@@ -28,7 +28,8 @@ initial begin
     data[1]  = 32'h05000113;   // addi x2, x0, 0x50  (x2 = 数据段基地址 0x50)
 
     // ===== 初始化测试数据到寄存器 ===== //
-    data[2]  = 32'h800000B7;   // lui x1, 0x80000   (x1 = 0x80000000, 最小负数)
+    // data[2]  = 32'h800000B7;   // lui x1, 0x80000   (x1 = 0x80000000, 最小负数)
+    data[2]  = 32'h80000097;   //auipc x1, 0x80000
     data[3]  = 32'hFFFFF0B7;   // lui x1, 0xFFFFF   (x1 = 0xFFFFF000)
     data[4]  = 32'h00008113;   // addi x2, x1, 0    (x2 = x1 = 0xFFFFF000)
     data[5]  = 32'h7FF00193;   // addi x3, x0, 2047 (x3 = 0x7FF)
@@ -53,9 +54,9 @@ initial begin
     data[17] = 32'h0062D3B3;   // srl x7, x5, x6    (x7 = 0xFFFFFFFF >> 1逻辑 = 0x7FFFFFFF)
     data[18] = 32'h4062D3B3;   // sra x7, x5, x6    (x7 = 0xFFFFFFFF >> 1算术 = 0xFFFFFFFF)
 
-    // 4. slt/sltu 比较测试
     data[19] = 32'h0062A3B3;   // slt x7, x5, x6    (x7 = (-1 < 1) ? 1 : 0 → 1)
     data[20] = 32'h0062B3B3;   // sltu x7, x5, x6   (x7 = (0xFFFFFFFF < 0x1) ? 1 : 0 → 0)
+    // 4. slt/sltu 比较测试
 
     // ===== I-type 指令测试 ===== //
     // 1. addi 测试（正数、负数、边界）

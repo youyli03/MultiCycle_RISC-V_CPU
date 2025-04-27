@@ -120,7 +120,7 @@ always@(posedge clk)begin
     end
 end
 
-assign alu_down = sft_req ? shifter_down : 1'b1;
+assign alu_down = (sft_req & RItype) ? shifter_down : 1'b1;
 
 // wire [31:0] _sres = (shifter_in1 << shifter_in2)    ;
 // wire [31:0] shifter_Ari_mask = 32'hffffffff >> shifter_in2  ;

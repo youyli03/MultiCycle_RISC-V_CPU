@@ -63,7 +63,7 @@ wire [4:0]  rs1     ;
 // wire [6:0]  func7   ;
 
 wire [1:0]  ls_size = func3[1:0] ;
-wire        load_unsigned_flag = func3[2] ;
+wire        load_unsigned_flag = ~func3[2] ;
 reg  [31:0] _load_data ;
 // wire        load_signed = load_unsigned_flag ?
 //                 ( (ls_size == 2'b0) ? load_data[7] :
