@@ -41,7 +41,7 @@ always@(posedge clk) begin
 end
 
 initial begin
-    $readmemh("E:/code/MultiCycle_RISC-V_CPU/core/mem_data/test.hex", data); // 从 data.hex 文件中读取十六进制数据
+    $readmemh("E:/code/MultiCycle_RISC-V_CPU/core/mem_data/ctest.hex", data); // 从 data.hex 文件中读取十六进制数据
 end
 
 endmodule
