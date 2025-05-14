@@ -30,11 +30,11 @@ assign gpio_dir = gpio_dir_reg  ;
 assign gpio_out = gpio_set_reg  ;
 
 always @(posedge clk or negedge rst_n) begin
-    slave_valid <= 1'b0 ;
     if(!rst_n) begin
         gpio_dir_reg <= 32'h0;
         gpio_set_reg <= 32'h0;
     end else begin
+        slave_valid <= 1'b0 ;
         if(slave_req) begin
             if(slave_write) begin //write
                 case(slave_addr)

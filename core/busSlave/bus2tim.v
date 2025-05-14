@@ -25,7 +25,6 @@ reg  [31:0] tim_cnt_reg ;      // 计数寄存器
 reg  [31:0] tim_overcnt_reg ;   // 溢出寄存器
 
 always @(posedge clk or negedge rst_n) begin
-    slave_valid <= 1'b0 ;
     if(!rst_n) begin
         tim_en  <= 1'b0 ;
         tim_autoload <= 1'b0;
@@ -33,6 +32,7 @@ always @(posedge clk or negedge rst_n) begin
         tim_cnt_reg     <= 32'b0 ;
         tim_overcnt_reg <= 32'b0 ;
     end else begin
+        slave_valid <= 1'b0 ;
         if(tim_en)begin
             __tim_cnt <= __tim_cnt + 32'b1  ;
             if(__tim_cnt >= tim_cnt_reg)begin

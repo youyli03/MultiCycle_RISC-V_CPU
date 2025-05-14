@@ -52,12 +52,12 @@ reg  [7:0]  tx_data ;
 wire        tx_done ;
 
 always @(posedge clk or negedge rst_n) begin
-    slave_valid <= 1'b0 ;
     if(!rst_n) begin
         uart_reg_baud <= 32'd2;
         rx_tail <= 0;
         tx_head <= 0;
     end else begin
+        slave_valid <= 1'b0 ;
         if(slave_req) begin
             if(slave_write) begin //write
                 case(slave_addr)

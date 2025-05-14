@@ -3,7 +3,7 @@
 <!--                                                         -->
 <!-- Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="35" Path="E:/code/MultiCycle_RISC-V_CPU/multicycle-riscv-prj/multicycle-riscv-prj.xpr">
+<Project Version="7" Minor="35" Path="F:/Github/MultiCycle_RISC-V_CPU/multicycle-riscv-prj/multicycle-riscv-prj.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="2b303ae1a94d45f3b58bf1ad264f8efb"/>

@@ -182,12 +182,16 @@ end
 // assign alu_in2 = (rv_state == STATE_WB) ? ((Btype & Btype_Jump_en) | Jal | Jalr ? imm32 : 3'd4) :
 //                 Jal | Jalr ? 3'd4 :
 //                 in2_sel ? imm32 : o_rd2   ;
-assign alu_in1 = in1_sel[0] ? pc: rs1_data      ;
-assign alu_in2 = in2_sel[1] ? 3'd4 :
+// assign alu_in1 = in1_sel[0] ? pc: rs1_data      ;
+// assign alu_in2 = in2_sel[1] ? 3'd4 :
+assign alu_in1 = (rv_state == STATE_WB) ? (in1_sel[1] ? rs1_data : pc) :
+                in1_sel[0] ? pc: rs1_data      ;
+assign alu_in2 = (rv_state == STATE_WB) ? ((in2_sel[2] & Btype_Jump_en) | in2_sel[1] ? imm32 : 3'd4) :
+                in2_sel[1] ? 3'd4 :
                 in2_sel[0] ? imm32 : rs2_data   ;
 
-wire  [31:0] pc_in1 = in1_sel[1] ? rs1_data : pc ;
-wire  [31:0] pc_in2 = (in2_sel[2] & Btype_Jump_en) | in2_sel[1] ? imm32 : 3'd4 ;
+// wire  [31:0] pc_in1 = in1_sel[1] ? rs1_data : pc ;
+// wire  [31:0] pc_in2 = (in2_sel[2] & Btype_Jump_en) | in2_sel[1] ? imm32 : 3'd4 ;
 
 // output  reg         mem_req     ,
 // output  reg         mem_write   ,
@@ -266,7 +270,8 @@ always @(posedge clk) begin
         STATE_IDLE: pc <= PC_RESET  ;
         //放在WB而不是MEM是因为这个可以方便jal/jalr指令写回pc+4
         STATE_WB: begin
-                pc <= pc_in1 + pc_in2 ;
+                pc <= alu_out ;
+                // pc <= pc_in1 + pc_in2 ;
         end
     endcase
 end
