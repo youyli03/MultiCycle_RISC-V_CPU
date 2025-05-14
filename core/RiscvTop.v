@@ -18,10 +18,10 @@ module RiscvTop #(
 localparam STATE_IDLE   = 3'd0  ;   //复位
 localparam STATE_IF     = 3'd1  ;   //取指
 localparam STATE_ID     = 3'd2  ;   //译码
-localparam STATE_EX     = 3'd3  ;   //执行
-localparam STATE_MEM    = 3'd4  ;   //存储
-localparam STATE_WB     = 3'd5  ;   //写回
-localparam STATE_REG2   = 3'd6  ;   //rs2
+localparam STATE_REG2   = 3'd3  ;   //rs2
+localparam STATE_EX     = 3'd4  ;   //执行
+localparam STATE_MEM    = 3'd5  ;   //存储
+localparam STATE_WB     = 3'd6  ;   //写回
 
 reg  [2:0]  rv_state        ;
 reg  [2:0]  rv_state_nxt    ;
@@ -72,15 +72,23 @@ reg  [31:0] _load_data ;
 wire        load_signed = load_unsigned_flag & ( (~ls_size[0] & _load_data[7]) | (ls_size[0] & _load_data[15]));
 reg  [31:0] load_data ;
 reg  [31:0] alu_out_save ;
-always@(*) begin
-    alu_out_save <= alu_out_save ;
+always@(posedge clk) begin
+    // alu_out_save <= alu_out_save ;
     if(rv_state == STATE_EX)
         alu_out_save <= alu_out ;
 end
+// always @(posedge clk or negedge rst_n) begin
+//     if (!rst_n) begin
+//         alu_out_save <= 32'h0;
+//     end else if (rv_state == STATE_EX) begin
+//         alu_out_save <= alu_out;
+//     end
+// end
 
 wire        rs2_rd_req  ;
-reg  [31:0] rs1_data ;
-reg  [31:0] rs2_data ;
+reg  [31:0] _rs1_data;
+wire [31:0] rs1_data = (rs2_rd_req)?_rs1_data:o_rd1 ;
+wire [31:0] rs2_data = o_rd1;
 
 reg  [31:0] _store_data ;
 reg  [3:0]  _store_mask ;
@@ -94,6 +102,12 @@ wire Btype_Jump_en = alu_out_save[0] ;
 
 wire        reg_wr_req  ;
 wire        reg_wr_en = (rv_state == STATE_WB) && reg_wr_req && (rd != 0);
+// reg         reg_wr_en   ;
+// always@(posedge clk)begin
+//     reg_wr_en <= 0;
+//     if((rv_state == STATE_WB) && reg_wr_req && (rd != 0))
+//         reg_wr_en <= 1;
+// end
 wire [1:0]  reg_wr_sel ;
 wire [31:0] reg_wr_data = reg_wr_sel[0] ? imm32 : 
                         reg_wr_sel[1] ? load_data :
@@ -106,6 +120,11 @@ assign func3    = instr[14:12]  ;
 assign rs1      = ((rv_state == STATE_EX || rv_state == STATE_REG2) && rs2_rd_req)? instr[24:20] : instr[19:15] ;
 // assign rs2      = instr[24:20]  ;
 // assign func7    = instr[31:25]  ;
+
+always @(posedge mem_valid) begin
+    if(rv_state == STATE_ID )
+        instr <= mem_rdata   ;
+end
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
@@ -126,19 +145,23 @@ always @(*) begin
             rv_state_nxt <= STATE_ID    ;
         end
         STATE_ID:begin //译码 �?个周�?
-            if(mem_valid) begin
+            // if(mem_valid) begin
                 rv_state_nxt <= STATE_EX    ;
-                instr <= mem_rdata   ;
                 if(rs2_rd_req)
                     rv_state_nxt <= STATE_REG2    ;
-            end
+            // end
+            // else
+            //     rv_state_nxt <= STATE_EX    ;
         end
         STATE_REG2:begin
             rv_state_nxt <= STATE_EX    ;
         end
         STATE_EX:begin //执行 等待ALU结束信号
+            rv_state_nxt <= STATE_EX    ;
             if(alu_down)
             rv_state_nxt <= STATE_MEM   ;
+            // else
+            // rv_state_nxt <= STATE_EX    ;
         end
         STATE_MEM:begin //load、store和分支指令�??
             rv_state_nxt <= STATE_WB   ;
@@ -150,20 +173,10 @@ always @(*) begin
     end
 end
 
-always@(*) begin
+always@(posedge clk) begin
     case(rv_state)
-    STATE_EX:begin
-        if(rs2_rd_req)
-            rs2_data <= o_rd1 ;
-        else
-            rs1_data <= o_rd1 ;
-    end
-    // STATE_ID:begin
-    //     rs1_data <= o_rd1 ;
-    // end
     STATE_REG2:begin
-        rs1_data <= o_rd1 ;
-        // rs2_data <= o_rd1 ;
+        _rs1_data <= o_rd1 ;
     end
     endcase
 end
@@ -202,11 +215,12 @@ assign alu_in2 = (rv_state == STATE_WB) ? ((in2_sel[2] & Btype_Jump_en) | in2_se
 // input       [31:0]  mem_rdata   
 
 // assign mem_addr = (rv_state == STATE_MEM )? alu_out_save : pc ;
-always@(rv_state) begin
-    mem_addr <= mem_addr;
-    case(rv_state)
-    STATE_IF : mem_addr <= pc       ;
-    STATE_MEM: mem_addr <= alu_out  ;
+always @(posedge clk) begin
+    if(rv_state_nxt == STATE_IDLE)
+        mem_addr <= PC_RESET    ;
+    case (rv_state)
+    STATE_EX : mem_addr <= alu_out  ;
+    STATE_WB : mem_addr <= alu_out  ;
     endcase
 end
 

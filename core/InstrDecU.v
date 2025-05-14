@@ -34,6 +34,7 @@ assign func3    = instr[14:12]  ;
 
 
 wire Rtype  ;
+// wire RItype ;
 wire Itype_imm  ;
 wire Itype_load ;
 wire Itype_jalr ;
@@ -42,6 +43,14 @@ wire Stype  ;
 wire Jtype  ;
 wire Utype_lui      ;
 wire Utype_auipc    ;
+
+wire         lui     ;
+wire         RItype  ;
+wire         Btype   ;
+wire         Jal     ;
+wire         Jalr    ;
+wire         Load    ;
+wire         Store   ;
 
 always@(*)begin
     type = `TYPE_TYPE_NONE ;
@@ -103,7 +112,7 @@ assign Store = Stype    ;
 
 wire [31:0] imm32_i = {{20{instr[31]}}, instr[31:20]};
 wire [31:0] imm32_s = {{20{instr[31]}}, instr[31:25], instr[11:7]};
-wire [31:0] imm32_b = {{20{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
+wire [31:0] imm32_b = {{20{instr[31]}}, instr[7], instr[30:25], instr[11:8], 1'b0};
 wire [31:0] imm32_j = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
 wire [31:0] imm32_u = {instr[31:12], 12'b0};
 

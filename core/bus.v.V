@@ -76,6 +76,11 @@ always@(*)begin
     slave_2_req   <= 1'b0 ;
     slave_3_req   <= 1'b0 ;
 
+    slave_0_wdata <= 32'b0;
+    slave_1_wdata <= 32'b0;
+    slave_2_wdata <= 32'b0;
+    slave_3_wdata <= 32'b0;
+
     master_valid  <= 1'b0 ;
     master_ready  <= 1'b0 ;
     case(slave_sel)
