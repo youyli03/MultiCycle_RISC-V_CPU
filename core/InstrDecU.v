@@ -12,14 +12,6 @@ module InstrDecU (
 
     output reg  [1:0]   reg_wr_sel ,
 
-    // output wire         lui     ,
-    // output wire         RItype  , // add sub sll slt sltu xor srl sra or and
-    // output wire         Btype   ,
-    // output wire         Jal     ,
-    // output wire         Jalr    ,
-    // output wire         Load    ,
-    // output wire         Store   ,
-
     output wire         rs2_rd_req  ,
 
     output wire         reg_wr_req  
@@ -34,23 +26,16 @@ assign func3    = instr[14:12]  ;
 
 
 wire Rtype  ;
-// wire RItype ;
 wire Itype_imm  ;
 wire Itype_load ;
 wire Itype_jalr ;
 wire Stype  ;
-// wire Btype  ;
 wire Jtype  ;
 wire Utype_lui      ;
 wire Utype_auipc    ;
 
-wire         lui     ;
 wire         RItype  ;
 wire         Btype   ;
-wire         Jal     ;
-wire         Jalr    ;
-wire         Load    ;
-wire         Store   ;
 
 always@(*)begin
     type = `TYPE_TYPE_NONE ;
@@ -96,11 +81,6 @@ assign RItype = Rtype | Itype_imm       ;
 assign reg_wr_req = ~(Btype | Stype)    ;
 
 // assign Jal_Jalr = Jtype | Itype_jalr    ;
-assign lui  = Utype_lui     ;
-assign Jal  = Jtype         ;
-assign Jalr = Itype_jalr    ;
-assign Load = Itype_load    ;
-assign Store = Stype    ;
 
 // assign imm32 = (Itype_imm) ? {{20{instr[31]}}, instr[31:20]} :
 //                (Stype) ? {{20{instr[31]}}, instr[31:25], instr[11:7]} :

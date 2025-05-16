@@ -15,27 +15,27 @@ module RiscvTop #(
     
 );
 
-localparam STATE_IDLE   = 3'd0  ;   //复位
-localparam STATE_IF     = 3'd1  ;   //取指
-localparam STATE_ID     = 3'd2  ;   //译码
-localparam STATE_REG2   = 3'd3  ;   //rs2
-localparam STATE_EX     = 3'd4  ;   //执行
-localparam STATE_MEM    = 3'd5  ;   //存储
-localparam STATE_WB     = 3'd6  ;   //写回
+localparam STATE_IDLE   = 7'b0000001;   //复位
+localparam STATE_IF     = 7'b0000010;   //取指
+localparam STATE_ID     = 7'b0000100;   //译码
+localparam STATE_REG2   = 7'b0001000;   //rs2
+localparam STATE_EX     = 7'b0010000;   //执行
+localparam STATE_MEM    = 7'b0100000;   //存储
+localparam STATE_WB     = 7'b1000000;   //写回
 
-reg  [2:0]  rv_state        ;
-reg  [2:0]  rv_state_nxt    ;
+reg  [6:0]  rv_state        ;
+reg  [6:0]  rv_state_nxt    ;
 
 reg  [31:0] pc      ;
 
 reg  [31:0] instr   ;
 // assign instr = mem_rdata   ;
-wire [31:0] imm32   ;
+reg  [31:0] imm32   ;
 
 wire [31:0] o_rd1   ;
 wire [31:0] o_rd2   ;
 
-wire [2:0]  type    ;
+reg  [2:0]  type    ;
 
 // wire        lui     ;
 // wire        RItype  ;
@@ -48,8 +48,8 @@ wire [2:0]  type    ;
 wire load_store = ~type[2] & type[1]    ;
 wire store      = type[0] & load_store  ;
 
-wire [1:0]  in1_sel ;
-wire [2:0]  in2_sel ;
+reg  [1:0]  in1_sel ;
+reg  [2:0]  in2_sel ;
 wire [31:0] alu_in1 ;
 wire [31:0] alu_in2 ;
 wire [31:0] alu_out ;
@@ -61,6 +61,13 @@ wire [2:0]  func3   ;
 wire [4:0]  rs1     ;
 // wire [4:0]  rs2     ;
 // wire [6:0]  func7   ;
+
+wire [31:0]  IDU_imm32      ;
+wire [1:0]   IDU_in1_sel    ;
+wire [2:0]   IDU_in2_sel    ;
+wire [2:0]   IDU_type       ;
+wire [1:0]   IDU_reg_wr_sel ;
+wire         IDU_reg_wr_req ;
 
 wire [1:0]  ls_size = func3[1:0] ;
 wire        load_unsigned_flag = ~func3[2] ;
@@ -100,7 +107,7 @@ wire Btype_Jump_en = alu_out_save[0] ;
 // wire [31:0] pc_change_res   = Jalr ? alu_out : pc + imm32    ;
 // wire [31:0] pc_add_4        = pc + 3'd4 ;
 
-wire        reg_wr_req  ;
+reg         reg_wr_req  ;
 wire        reg_wr_en = (rv_state == STATE_WB) && reg_wr_req && (rd != 0);
 // reg         reg_wr_en   ;
 // always@(posedge clk)begin
@@ -108,7 +115,7 @@ wire        reg_wr_en = (rv_state == STATE_WB) && reg_wr_req && (rd != 0);
 //     if((rv_state == STATE_WB) && reg_wr_req && (rd != 0))
 //         reg_wr_en <= 1;
 // end
-wire [1:0]  reg_wr_sel ;
+reg  [1:0]  reg_wr_sel ;
 wire [31:0] reg_wr_data = reg_wr_sel[0] ? imm32 : 
                         reg_wr_sel[1] ? load_data :
                         alu_out_save ;
@@ -122,8 +129,20 @@ assign rs1      = ((rv_state == STATE_EX || rv_state == STATE_REG2) && rs2_rd_re
 // assign func7    = instr[31:25]  ;
 
 always @(posedge mem_valid) begin
-    if(rv_state == STATE_ID )
+    if(rv_state == STATE_ID ) begin
         instr <= mem_rdata   ;
+    end
+end
+
+always @(posedge clk) begin
+    if(rv_state == STATE_ID) begin
+        imm32      <= IDU_imm32      ;
+        in1_sel    <= IDU_in1_sel    ;
+        in2_sel    <= IDU_in2_sel    ;
+        type       <= IDU_type       ;
+        reg_wr_sel <= IDU_reg_wr_sel ;
+        reg_wr_req <= IDU_reg_wr_req ;
+    end
 end
 
 always @(posedge clk or negedge rst_n) begin
@@ -312,13 +331,13 @@ end
 );
 
 (* DONT_TOUCH = "true" *) InstrDecU IDU(
-    .instr      (instr      ),
-    .imm32      (imm32      ),
-    .in1_sel    (in1_sel    ),       // 0 reg, 1 pc  , pc在mem阶段再更�?,这样不用pc-4
-    .in2_sel    (in2_sel    ),       // 0 reg, 1 imm32
+    .instr      (mem_rdata      ),
+    .imm32      (IDU_imm32      ),
+    .in1_sel    (IDU_in1_sel    ),       // 0 reg, 1 pc  , pc在mem阶段再更�?,这样不用pc-4
+    .in2_sel    (IDU_in2_sel    ),       // 0 reg, 1 imm32
 
-    .type       (type       ),
-    .rs2_rd_req (rs2_rd_req ),
+    .type       (IDU_type       ),
+    .rs2_rd_req (rs2_rd_req     ),
     // .lui        (lui        ),
     // .RItype     (RItype     ), // add sub sll slt sltu xor srl sra or and
     // .Btype      (Btype      ),
@@ -327,8 +346,8 @@ end
     // .Load       (Load       ),
     // .Store      (Store      ),
 
-    .reg_wr_sel (reg_wr_sel ),
-    .reg_wr_req (reg_wr_req )
+    .reg_wr_sel (IDU_reg_wr_sel ),
+    .reg_wr_req (IDU_reg_wr_req )
 );
 
 (* DONT_TOUCH = "true" *) RegFile RegFile0(

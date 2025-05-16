@@ -1,4 +1,5 @@
 `include "InstrDef.vh"
+`timescale 1ns/1ns
 
 module tb_soc( );
 
@@ -7,7 +8,7 @@ reg  rst = 0;
 always #1 clk = ~clk;
 
 initial begin
-    #10
+    #100
     rst <= 1 ;
 end
 
