@@ -14,9 +14,9 @@ module bus2mem(
 
 );
 
-reg [31:0] data [1023:0];
+reg [31:0] data [2047:0];
 
-wire [31:0] __mem_rdata = data[slave_addr[9:2]] ;
+wire [31:0] __mem_rdata = data[slave_addr[14:2]] ;
 wire [31:0] _mem_rdata = 
     {   __mem_rdata[7:0],__mem_rdata[15:8],__mem_rdata[23:16],__mem_rdata[31:24]} ;
 
@@ -32,7 +32,7 @@ always@(posedge clk) begin
     slave_valid <= 0 ;
     if(slave_req)begin
         if(slave_write)
-            data[slave_addr[9:2]] <= (data[slave_addr[9:2]] & (~mask) )| (slave_wdata & mask) ;
+            data[slave_addr[14:2]] <= (data[slave_addr[14:2]] & (~mask) )| (slave_wdata & mask) ;
         else begin
             slave_rdata <= __mem_rdata;
             slave_valid <= 1 ;
@@ -41,7 +41,8 @@ always@(posedge clk) begin
 end
 
 initial begin
-    $readmemh("E:/code/MultiCycle_RISC-V_CPU/core/mem_data/ctest.hex", data); // 从 data.hex 文件中读取十六进制数据
+    // $readmemh("E:/code/MultiCycle_RISC-V_CPU/core/mem_data/ctest.hex", data); // 从 data.hex 文件中读取十六进制数据
+    $readmemh("F:/Github/MultiCycle_RISC-V_CPU/core/mem_data/oled.hex", data); // 从 data.hex 文件中读取十六进制数据
 end
 
 endmodule

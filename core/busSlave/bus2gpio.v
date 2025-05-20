@@ -51,6 +51,12 @@ always @(posedge clk or negedge rst_n) begin
                 GPIO_DATA_REG:begin
                     slave_rdata <= gpio_in  ;
                 end
+                GPIO_DIR_REG:begin
+                    slave_rdata <= gpio_dir_reg ;
+                end
+                GPIO_SET_REG:begin
+                    slave_rdata <= gpio_set_reg ;
+                end
                 default:begin
                     slave_rdata <= 32'h0    ;
                 end

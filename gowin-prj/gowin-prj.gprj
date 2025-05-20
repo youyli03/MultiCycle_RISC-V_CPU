@@ -18,6 +18,8 @@
         <File path="F:/Github/MultiCycle_RISC-V_CPU/core/busSlave/uart_rx.v" type="file.verilog" enable="1"/>
         <File path="F:/Github/MultiCycle_RISC-V_CPU/core/busSlave/uart_tx.v" type="file.verilog" enable="1"/>
         <File path="F:/Github/MultiCycle_RISC-V_CPU/core/soc_top.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin-soc-top.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/gowin_rpll.v" type="file.verilog" enable="1"/>
         <File path="src/gowin-prj.cst" type="file.cst" enable="1"/>
         <File path="src/gowin-prj.sdc" type="file.sdc" enable="1"/>
     </FileList>

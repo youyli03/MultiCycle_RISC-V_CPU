@@ -1,5 +1,5 @@
 module RiscvTop #(
-	parameter [31:0] PC_RESET = 32'h 0000_0000
+	parameter [31:0] PC_RESET = 32'h 8000_0000
 )(
     input         clk       ,
     input         rst_n     ,
