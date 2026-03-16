@@ -11,3 +11,4 @@ multicycle-riscv-prj/vivado.jou
 gowin-prj/gowin-prj.gprj.user
 gowin-prj/src/gowin_rpll/gowin_rpll_tmp.v
 *.o
+*.elf
